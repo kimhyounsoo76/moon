@@ -65,6 +65,35 @@ nav#nav button.on{color:var(--accent)}
 .refstrip{display:flex;gap:12px;align-items:center;background:var(--card);border:1px dashed var(--accent);border-radius:var(--r);padding:10px;margin-bottom:12px}
 .refstrip img{width:96px;height:72px;object-fit:cover;border-radius:9px;flex:none;cursor:pointer}
 .refstrip .t{flex:1;min-width:0;font-size:14px;line-height:1.45}
+/* ---------- 학생 모드 ---------- */
+body.kid{--nav-h:0px;--top-h:0px}
+body.kid #nav,body.kid .topbar,body.kid .ov-top,body.kid #readout,body.kid #finder,body.kid #level,body.kid #timerBar,body.kid .btnrow,body.kid #zoomWrap,body.kid #btnManualCam{display:none!important}
+body.kid main{padding-bottom:0}
+body.kid .cross{top:42%}body.kid .guide{top:calc(42% + 68px);font-size:16px}
+body.kid .nocam{padding-bottom:300px}
+body.kid #toast{bottom:auto;top:calc(96px + env(safe-area-inset-top));transform:translate(-50%,-20px)}
+body.kid #toast.show{transform:translate(-50%,0)}
+.kidtop{position:absolute;top:0;left:0;right:0;z-index:6;display:none;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;gap:8px;align-items:center;justify-content:space-between;background:linear-gradient(rgba(5,8,25,.8),rgba(5,8,25,0))}
+body.kid .kidtop{display:flex}
+.steps{display:flex;gap:5px;flex-wrap:wrap}
+.steps span{font-size:13px;padding:5px 9px;border-radius:999px;background:rgba(5,8,25,.65);color:var(--muted);font-weight:700;white-space:nowrap}
+.steps span.on{background:var(--accent);color:#1a1400}
+.steps span.done{color:var(--ok)}
+.kidgear{width:40px;height:40px;border-radius:50%;background:rgba(5,8,25,.5);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.kidpanel{display:none;width:min(100%,560px);background:rgba(10,14,38,.93);border:1px solid var(--line);border-radius:18px;padding:14px 16px;text-align:center}
+body.kid .kidpanel{display:block}
+.kidpanel .kt{font-size:21px;font-weight:800;margin-bottom:4px}
+.kidpanel .kd{font-size:15px;color:var(--muted);margin-bottom:12px;line-height:1.45}
+.kidbtn{width:100%;min-height:64px;font-size:22px;font-weight:800;border-radius:16px;background:var(--accent);color:#1a1400;border:0;cursor:pointer}
+.kidbtn:active{transform:scale(.98)}
+.kidsub{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.kidsub:empty{display:none}
+.kidthumbs{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:4px}
+.kidthumbs:empty{display:none}
+.kidthumbs .kth{position:relative;flex:none;cursor:pointer}
+.kidthumbs img{width:64px;height:48px;object-fit:cover;border-radius:8px;display:block;border:2px solid transparent}
+.kidthumbs .need img{border-color:var(--warn)}
+.kidthumbs .kth small{position:absolute;left:0;right:0;bottom:2px;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;text-align:center}
 .ov-bottom{left:0;right:0;bottom:0;padding:10px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .ov-bottom>*{pointer-events:auto}
 .readout{width:min(100%,520px);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -179,6 +208,11 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
           <div class="chip" id="clockChip">--:--</div>
           <div class="chip" id="moonChip">🌙</div>
         </div>
+        <div class="kidtop" id="kidTop">
+          <div class="steps" id="kidSteps"><span>① 기준 사진</span><span>② 달 찍기</span><span>③ 달의 길</span></div>
+          <div class="chip" id="kidClock">--:--</div>
+          <div class="kidgear" id="kidGear" title="선생님 모드: 길게 누르기">⚙</div>
+        </div>
         <div class="ov level" id="level"><i id="levelLine"></i></div>
         <div class="ov cross" id="stageCross"></div>
         <canvas class="ov finder" id="finder" width="100" height="100"></canvas>
@@ -196,6 +230,13 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
           </div>
         </div>
         <div class="ov ov-bottom">
+          <div class="kidpanel" id="kidPanel">
+            <div class="kt" id="kidTitle"></div>
+            <div class="kd" id="kidDesc"></div>
+            <button class="kidbtn" id="kidMain">📸</button>
+            <div class="kidsub" id="kidSub"></div>
+            <div class="kidthumbs" id="kidThumbs"></div>
+          </div>
           <div class="chip readout" id="readout">🧭 나침반 준비 중…</div>
           <div class="chip slider hidden" id="zoomWrap">🔍 <input type="range" id="zoomRange"></div>
           <div class="chip timerbar" id="timerBar">
@@ -271,6 +312,10 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
       <div class="card"><h3 style="margin-top:0">👤 관측자</h3>
         <label class="f">이름 또는 모둠 (기록지·사진에 적혀요)<input type="text" id="setName" placeholder="예) 6학년 1반 2모둠"></label>
         <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="setSound"> 촬영·알림 소리 켜기</label>
+      </div>
+      <div class="card"><h3 style="margin-top:0">👧 학생 모드</h3>
+        <div class="note" style="margin-top:0">학생이 쓰는 태블릿용 단순 화면이에요. 탭·설정·나침반 숫자가 모두 숨고 <b>① 기준 사진 → ② 달 찍기 → ③ 달의 길</b> 세 단계만 큰 버튼으로 보여요. 장소·관측자 이름·⏱ 간격 알림을 먼저 맞춰 두고 켜 주세요. 선생님 모드로 돌아오려면 학생 화면 오른쪽 위 ⚙를 <b>2초간 길게</b> 누르면 돼요.</div>
+        <button class="btn primary" id="btnKid" style="margin-top:10px">👧 학생 모드 켜기</button>
       </div>
       <div class="card"><h3 style="margin-top:0">📍 촬영 뒤 달 위치 표시</h3>
         <select id="setMark"></select>
@@ -383,7 +428,7 @@ let actx=null;
 function beep(n,f){try{if(!S.sound)return;actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();for(let i=0;i<(n||1);i++){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f||880;o.connect(g);g.connect(actx.destination);const t=actx.currentTime+i*0.35;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.start(t);o.stop(t+0.3);}}catch(e){}}
 
 /* ===== 저장 ===== */
-const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask'};
+const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask',kid:false};
 let S;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('moonlog.settings')||'{}'));}catch(e){S=Object.assign({},DEF);}
 const saveS=()=>{try{localStorage.setItem('moonlog.settings',JSON.stringify(S));}catch(e){}};
 const DB=(()=>{let db=null;
@@ -412,7 +457,7 @@ function fillRecPos(rec,pos){const useRef=!!(curRef&&S.ghost);if(pos){rec.camAz=
   else if(pos){rec.az=Math.round(pos.az);rec.alt=Math.round(pos.alt);rec.sensor=pos.absolute?'abs':'rel';}
   setRel(rec);return useRef;}
 async function saveRefFrom(ph,pos){const now=Date.now();const ref={id:'f'+now,ts:now,day:dayKey(new Date(now)),photo:ph.photo,thumb:ph.thumb,az:pos?Math.round(pos.az):null,alt:pos?Math.round(pos.alt):null,place:S.place};
-  try{await DB.putRef(ref);}catch(e){toast('기준 사진을 저장하지 못했어요');}refs.push(ref);refMode=false;$('#btnShot').classList.remove('ref');beep(2,1320);toast('📌 기준 사진을 저장했어요. 이제 노란 윤곽에 건물을 맞추고 달을 찍어요',3500);await setRef(ref);}
+  try{await DB.putRef(ref);}catch(e){toast('기준 사진을 저장하지 못했어요');}refs.push(ref);refMode=false;$('#btnShot').classList.remove('ref');beep(2,1320);toast(S.kid?'📌 기준 사진 완성! 이제 노란 선에 건물을 맞추고 달을 찍어요':'📌 기준 사진을 저장했어요. 이제 노란 윤곽에 건물을 맞추고 달을 찍어요',3500);await setRef(ref);renderKid();}
 function startRefMode(){refMode=true;$('#btnShot').classList.add('ref');toast('📌 기준 사진: 건물·나무가 들어가게, 달은 화면 왼쪽에 오게 맞추고 📸',3500);}
 function openRefModal(){const r=curRef,t=new Date(r.ts);
   const body='<img class="prev" src="'+r.thumb+'" style="max-height:40vh;object-fit:contain"><div class="kv" style="margin-top:10px"><span>찍은 때</span><b>'+fmtDateK(t)+' '+fmtTime(t)+'</b><span>카메라 방향</span><b>'+(r.az!=null?dirName(r.az)+' '+r.az+'° · 고도 '+r.alt+'°':'기록 없음')+'</b></div><label class="row" style="gap:8px;margin-top:12px;cursor:pointer"><input type="checkbox" id="refGhostTg"'+(S.ghost?' checked':'')+'> 카메라 화면에 기준 윤곽 겹쳐 보이기</label><label class="f" style="margin-top:10px">촬영 뒤 달 위치 표시<select id="refMarkSel">'+MARK_OPTS+'</select></label><div class="note">같은 자리에서 이 윤곽에 건물을 맞추고 찍으면 「달의 길」 그림이 만들어져요. 기준 찍을 때와 같은 방향(세로/가로)으로 들어요. 관측 장소를 바꾸면 새로 찍어요.</div>';
@@ -425,14 +470,32 @@ const MARK_OPTS='<option value="ask">사진에서 달을 눌러 확인 (기본)<
 async function afterShot(rec,w,h){if(S.markMode==='auto'){const g=guessMoonPos(rec,w,h);if(g){rec.mx=+g.x.toFixed(4);rec.my=+g.y.toFixed(4);rec.mxAuto=true;await persist(rec,false);toast('📍 달 위치를 짐작 자리에 자동 표시했어요 — 기록 탭에서 고칠 수 있어요',3200);return;}}
   openMarkModal(rec);}
 function openMarkModal(rec,after){if(!rec.photo){toast('사진이 없는 기록이에요');return;}
-  const body='<div style="text-align:center"><div class="markwrap" id="markWrap"><img id="markImg" src="'+rec.photo+'" alt=""><div class="marker" id="marker"></div></div></div><div class="note" style="text-align:center">사진 속 <b>달</b>을 손가락으로 눌러 주세요. 달이 안 보이면 건너뛰기.</div>';
+  const kid=S.kid;
+  const body='<div style="text-align:center"><div class="markwrap" id="markWrap"><img id="markImg" src="'+rec.photo+'" alt=""><div class="marker" id="marker"></div></div></div><div class="note" style="text-align:center'+(kid?';font-size:16px;color:var(--text)':'')+'">'+(kid?'사진에서 <b>달</b>이 어디 있어? 손가락으로 톡 눌러 줘.':'사진 속 <b>달</b>을 손가락으로 눌러 주세요. 달이 안 보이면 건너뛰기.')+'</div>';
   let cur=rec.mx!=null?{x:rec.mx,y:rec.my}:null;
-  openModal('📍 달 위치 표시 — '+fmtTime(new Date(rec.ts)),body,[{label:'건너뛰기',fn:()=>{closeModal();if(after)after();}},{label:'저장',cls:'primary',fn:async()=>{if(cur){rec.mx=+cur.x.toFixed(4);rec.my=+cur.y.toFixed(4);rec.mxAuto=false;await persist(rec,false);}closeModal();if(curView==='log')renderLog();if(after)after();}}]);
+  openModal(kid?'🔍 달을 찾아서 눌러 줘!':'📍 달 위치 표시 — '+fmtTime(new Date(rec.ts)),body,[{label:kid?'못 찾겠어요':'건너뛰기',fn:()=>{closeModal();if(after)after();}},{label:kid?'여기 있어요!':'저장',cls:'primary',fn:async()=>{if(cur){rec.mx=+cur.x.toFixed(4);rec.my=+cur.y.toFixed(4);rec.mxAuto=false;await persist(rec,false);}closeModal();if(curView==='log')renderLog();renderKid();if(kid&&cur)toast('찾았다! 🌙');if(after)after();}}]);
   const img=$('#markImg'),mk=$('#marker'),wrap=$('#markWrap');
   const place=()=>{if(!cur){mk.style.display='none';return;}mk.style.display='';mk.style.left=(cur.x*100)+'%';mk.style.top=(cur.y*100)+'%';};
   const init=()=>{if(!cur)cur=guessMoonPos(rec,img.naturalWidth,img.naturalHeight)||{x:0.5,y:0.5};place();};
   if(img.complete&&img.naturalWidth)init();else img.onload=init;place();
   wrap.addEventListener('click',e=>{const r=img.getBoundingClientRect();if(!r.width)return;cur={x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)};place();});}
+/* ===== 학생 모드 ===== */
+function setKid(on){S.kid=!!on;if(on)S.ghost=true;saveS();document.body.classList.toggle('kid',S.kid);
+  if(!S.kid){refMode=false;$('#btnShot').classList.remove('ref');}
+  showView('cam');renderKid();}
+function renderKid(){if(!S.kid)return;const today=dayKey(new Date()),hasRef=!!(curRef&&curRef.day===today);
+  if(!hasRef&&!refMode){refMode=true;$('#btnShot').classList.add('ref');}
+  const todays=records.filter(r=>r.day===today).sort((a,b)=>a.ts-b.ts),n=todays.length,marked=todays.filter(r=>r.mx!=null).length;
+  const step=(!hasRef||refMode)?1:(marked>=2?3:2);
+  $$('#kidSteps span').forEach((s,i)=>{s.classList.toggle('on',i===step-1);s.classList.toggle('done',i<step-1);});
+  let title,desc,main;
+  if(step===1){title='① 기준 사진 찍기';desc=hasRef?'건물이 보이게 맞추고 다시 찍어요. 달은 화면 왼쪽에!':'늘 설 자리에 서요. 학교 건물이 보이게 맞추고, 달은 화면 왼쪽에 오게 찍어요.';main='📸 기준 사진 찍기';}
+  else{title=step===2?'② 달 사진 찍기':'③ 달의 길이 생겼어요!';desc='노란 선에 건물을 딱 맞추고 찍어요.'+(n?' 지금까지 '+n+'장.':'')+(Timer.isOn()?' ⏰ 다음 '+Timer.left():'');main='📸 달 찍기';}
+  setHTML($('#kidTitle'),title);setHTML($('#kidDesc'),desc);setHTML($('#kidMain'),main);
+  let sub='';if(Sensor.needPerm()&&!Sensor.isEnabled())sub+='<button class="btn sm primary" id="kidSensor">🧭 나침반 켜기</button>';
+  if(step>=2){if(marked>=1)sub+='<button class="btn'+(step===3?' primary':'')+'" id="kidPath">🌙 달의 길 보기</button>';sub+='<button class="btn sm" id="kidReref">📌 기준 다시 찍기</button>';}
+  setHTML($('#kidSub'),sub);
+  setHTML($('#kidThumbs'),todays.filter(r=>r.thumb).map(r=>'<div class="kth'+(r.mx==null?' need':'')+'" data-id="'+r.id+'"><img src="'+r.thumb+'" alt=""><small>'+fmtTime(new Date(r.ts))+(r.mx==null?' ?':'')+'</small></div>').join(''));}
 async function buildPath(day,quiet){const recs=records.filter(r=>r.day===day&&r.photo&&r.mx!=null).sort((a,b)=>a.ts-b.ts);const ref=refFor(day);
   if(!ref){if(!quiet)toast('이 날의 기준 사진이 없어요 — 관측 탭 📌로 찍어요',3000);return null;}
   if(!recs.length){if(!quiet)toast('사진 속 달 위치를 표시한 기록이 없어요 (기록 카드의 📍)',3000);return null;}
@@ -513,6 +576,7 @@ function stopLoop(){loopOn=false;}
 function loop(ts){if(!loopOn)return;requestAnimationFrame(loop);if(ts-lastUi<100)return;lastUi=ts;updateOverlay();}
 function updateOverlay(){const now=new Date();const nToday=records.filter(r=>r.day===dayKey(now)).length;
   setHTML($('#clockChip'),'<b>'+fmtTime(now)+':'+pad2(now.getSeconds())+'</b><br><span class="dim">'+fmtDateK(now)+(nToday?' · 오늘 '+nToday+'장':'')+'</span>');
+  if(S.kid)setHTML($('#kidClock'),'<b>'+fmtTime(now)+'</b>');
   const pred=Astro.moon(now,S.lat,S.lng),il=Astro.illum(now);
   setHTML($('#moonChip'),moonEmoji(il.phase)+' '+phaseName(il.phase)+'<br>'+(pred.alt>0?'달: <b>'+dirName(pred.az)+' '+Math.round(pred.az)+'° · 고도 '+Math.round(pred.alt)+'°</b>':'달: <b>지평선 아래</b>'));
   const pos=Sensor.get(),cross=$('#stageCross'),guide=$('#guide'),ro=$('#readout');
@@ -555,7 +619,7 @@ async function doCapture(auto){const now=Date.now();const c=Cam.capture();
   if(refMode){await saveRefFrom({photo:c.toDataURL('image/jpeg',0.86),thumb:makeThumb(c,360)},pos);return;}
   const rec=newRec(now),useRef=fillRecPos(rec,pos);
   rec.photo=c.toDataURL('image/jpeg',0.86);rec.thumb=makeThumb(c,360);
-  await persist(rec,true);
+  await persist(rec,true);renderKid();
   toast('📸 '+fmtTime(new Date(now))+(rec.az!=null?' · '+dirName(rec.az)+' '+rec.az+'° · 고도 '+rec.alt+'°':' 기록했어요'));
   if(auto){if(useRef&&S.markMode==='auto'){const g=guessMoonPos(rec,c.width,c.height);if(g){rec.mx=+g.x.toFixed(4);rec.my=+g.y.toFixed(4);rec.mxAuto=true;await persist(rec,false);}}return;}
   if(useRef)setTimeout(()=>afterShot(rec,c.width,c.height),450);
@@ -575,7 +639,8 @@ const Timer=(()=>{let on=false,mode='alarm',interval=60,next=0,wl=null;
   function tick(){if(!on)return;if(next-Date.now()<=0){next=Date.now()+interval*60000;fire();}render();}
   function render(){const b=$('#tStart');b.textContent=on?'■ 멈춤':'▶ 시작';b.classList.toggle('danger',on);b.classList.toggle('primary',!on);$('#tInterval').disabled=on;$('#tMode').disabled=on;$('#btnTimer').classList.toggle('on',on);
     const left=on?Math.max(0,next-Date.now()):0;$('#tCount').textContent=on?('다음 '+(mode==='auto'?'촬영':'알림')+' '+pad2(Math.floor(left/60000))+':'+pad2(Math.floor(left%60000/1000))):'';}
-  return{start,stop,tick,toggle:()=>on?stop():start(),isAuto:()=>on&&mode==='auto',isOn:()=>on,render,reacquire:()=>{if(on&&mode==='auto'&&!document.hidden)wakeOn();}};
+  function left(){if(!on)return'';const l=Math.max(0,next-Date.now());return pad2(Math.floor(l/60000))+':'+pad2(Math.floor(l%60000/1000));}
+  return{start,stop,tick,left,toggle:()=>on?stop():start(),isAuto:()=>on&&mode==='auto',isOn:()=>on,render,reacquire:()=>{if(on&&mode==='auto'&&!document.hidden)wakeOn();}};
 })();
 
 /* ===== 기록 화면 ===== */
@@ -744,12 +809,22 @@ function bind(){
   $('#btnManualCam').onclick=()=>openRecModal(newRec(Date.now()),true);
   $('#btnCalib').onclick=calibrate;
   $('#btnRef').onclick=()=>{if(refMode){refMode=false;$('#btnShot').classList.remove('ref');toast('기준 사진 찍기를 취소했어요');return;}if(curRef)openRefModal();else startRefMode();};
+  // 학생 모드
+  $('#btnKid').onclick=()=>{setKid(true);toast('👧 학생 모드예요. 선생님 모드로 돌아가려면 ⚙를 2초간 길게 누르세요',4000);};
+  $('#kidMain').onclick=()=>{pendingPos=Sensor.get();doCapture(false);};
+  $('#kidSub').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.id==='kidSensor'){Sensor.enable().then(()=>renderKid());return;}
+    if(b.id==='kidPath'){toast('달의 길을 그리는 중…');const c=await buildPath(dayKey(new Date()),false);if(c)previewCanvas('🌙 우리가 찾은 달의 길',c,'달의길_'+dayKey(new Date())+'.jpg','image/jpeg',0.9,'건물 위에서 달이 어느 쪽으로 움직였는지 보여요.');}
+    else if(b.id==='kidReref'){if(!confirm('기준 사진을 다시 찍을까요? (자리를 옮겼거나 달이 화면 밖으로 나갔을 때만)'))return;refMode=true;$('#btnShot').classList.add('ref');renderKid();}};
+  $('#kidThumbs').onclick=e=>{const t=e.target.closest('.kth');if(!t)return;const rec=records.find(r=>r.id===t.dataset.id);if(rec)openMarkModal(rec);};
+  (()=>{let tm=null;const g=$('#kidGear');const dn=e=>{e.preventDefault();clearTimeout(tm);tm=setTimeout(()=>{tm=null;if(confirm('선생님 모드로 돌아갈까요?')){setKid(false);toast('선생님 모드');}},1500);};const up=()=>{if(tm){clearTimeout(tm);tm=null;toast('선생님 모드로 가려면 2초간 길게 누르세요');}};
+    g.addEventListener('pointerdown',dn);g.addEventListener('pointerup',up);g.addEventListener('pointerleave',()=>{clearTimeout(tm);tm=null;});g.addEventListener('contextmenu',e=>e.preventDefault());})();
   $('#btnTimer').onclick=()=>$('#timerBar').classList.toggle('on');
   $('#tStart').onclick=()=>Timer.toggle();
   $('#readout').addEventListener('click',e=>{if(e.target&&e.target.id==='btnSensor')Sensor.enable();});
   $('#fileCam').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const pos=pendingPos||Sensor.get();pendingPos=null;let ph=null;try{ph=await fileToPhoto(f);}catch(err){toast('사진을 읽지 못했어요');return;}
     if(refMode){await saveRefFrom(ph,pos);return;}
-    const rec=newRec(Date.now()),useRef=fillRecPos(rec,pos);rec.photo=ph.photo;rec.thumb=ph.thumb;await persist(rec,true);toast('기록했어요');
+    const rec=newRec(Date.now()),useRef=fillRecPos(rec,pos);rec.photo=ph.photo;rec.thumb=ph.thumb;await persist(rec,true);renderKid();toast('기록했어요');
     if(useRef){const im=await loadImg(ph.photo).catch(()=>null);afterShot(rec,im?im.width:0,im?im.height:0);}else if(rec.az==null)openRecModal(rec,false,'방위·고도를 적어 주세요');};
   $('#bannerOk').onclick=()=>$('#banner').classList.add('hidden');
   $('#mClose').onclick=closeModal;$('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
@@ -789,8 +864,9 @@ function bind(){
   window.__onBack=()=>{if(!$('#modal').classList.contains('hidden')){closeModal();return true;}if(refMode){refMode=false;$('#btnShot').classList.remove('ref');return true;}if(curView!=='cam'){showView('cam');return true;}return false;};
 }
 async function init(){try{records=await DB.all();refs=await DB.allRefs();}catch(e){toast('기록 저장소를 열 수 없어요 (사생활 보호 모드?)');}
-  bind();updateTopChip();Timer.render();renderSettings();showView('cam');setInterval(()=>Timer.tick(),1000);setInterval(updateTopChip,600000);
-  const r0=refs.find(x=>x.id===S.refId);if(r0)setRef(r0);}
+  bind();updateTopChip();Timer.render();renderSettings();document.body.classList.toggle('kid',!!S.kid);
+  const r0=refs.find(x=>x.id===S.refId);if(r0)setRef(r0);
+  showView('cam');renderKid();setInterval(()=>{Timer.tick();if(S.kid)renderKid();},1000);setInterval(updateTopChip,600000);}
 init();
 })();
 </script>
