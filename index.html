@@ -51,6 +51,7 @@ nav#nav button.on{color:var(--accent)}
 .cross.hit{border-color:var(--ok);box-shadow:0 0 18px rgba(94,226,154,.55)}
 .level{left:0;right:0;top:50%;height:0;pointer-events:none}
 .level i{position:absolute;left:50%;top:0;width:46%;height:2px;margin-left:-23%;background:rgba(126,200,255,.5);transform-origin:50% 50%}
+.pathov{inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .finder{right:12px;top:calc(50% - 50px);width:100px;height:100px;pointer-events:none}
 .guide{left:50%;top:calc(50% + 68px);transform:translateX(-50%);text-align:center;font-weight:800;font-size:15px;line-height:1.35;text-shadow:0 1px 4px #000,0 0 10px #000;pointer-events:none;white-space:normal;width:max-content;max-width:92%}
 .ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1}
@@ -86,6 +87,14 @@ body.kid .kidpanel{display:block}
 .kidpanel .kd{font-size:15px;color:var(--muted);margin-bottom:12px;line-height:1.45}
 .kidbtn{width:100%;min-height:64px;font-size:22px;font-weight:800;border-radius:16px;background:var(--accent);color:#1a1400;border:0;cursor:pointer}
 .kidbtn:active{transform:scale(.98)}
+/* 학생 모드 가로 화면(휴대폰 가로): 단계 상자를 오른쪽으로 옮겨 하늘을 가리지 않게 */
+@media (orientation:landscape) and (max-height:560px){
+body.kid .ov-bottom{left:auto;right:10px;top:64px;bottom:10px;width:min(300px,38%);display:flex;align-items:flex-end;justify-content:flex-end;padding:0}
+body.kid .kidpanel{width:100%;max-height:100%;overflow:auto;padding:10px 12px}
+body.kid .kidpanel .kt{font-size:17px}body.kid .kidpanel .kd{font-size:13px;margin-bottom:8px}
+body.kid .kidbtn{min-height:50px;font-size:18px}
+body.kid .cross{left:31%;top:52%}body.kid .guide{left:31%;top:calc(52% + 62px);max-width:58%}
+body.kid .nocam{padding-bottom:0}}
 .kidsub{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
 .kidsub:empty{display:none}
 .kidthumbs{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:4px}
@@ -215,6 +224,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
         </div>
         <div class="ov level" id="level"><i id="levelLine"></i></div>
         <div class="ov cross" id="stageCross"></div>
+        <canvas class="ov pathov hidden" id="pathOv"></canvas>
         <canvas class="ov finder" id="finder" width="100" height="100"></canvas>
         <div class="ov guide" id="guide"></div>
         <div class="flash" id="flash"></div>
@@ -317,6 +327,11 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
         <div class="note" style="margin-top:0">학생이 쓰는 태블릿용 단순 화면이에요. 탭·설정·나침반 숫자가 모두 숨고 <b>① 기준 사진 → ② 달 찍기 → ③ 달의 길</b> 세 단계만 큰 버튼으로 보여요. 장소·관측자 이름·⏱ 간격 알림을 먼저 맞춰 두고 켜 주세요. 선생님 모드로 돌아오려면 학생 화면 오른쪽 위 ⚙를 <b>2초간 길게</b> 누르면 돼요.</div>
         <button class="btn primary" id="btnKid" style="margin-top:10px">👧 학생 모드 켜기</button>
       </div>
+      <div class="card"><h3 style="margin-top:0">🕐 오늘 관측할 시간</h3>
+        <select id="setObs"><option value="2">2시간</option><option value="3">3시간 (기본)</option><option value="4">4시간</option><option value="5">5시간</option></select>
+        <label class="note" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="setPathT"> 선생님 모드에서 기준 사진 찍을 때 달이 지나갈 길 미리 보기</label>
+        <div class="note">기준 사진을 찍을 때 앱이 이 시간 동안 달이 화면 안에 머무는지 계산해서 <b>✅ 좋은 구도</b> / <b>⚠️ 벗어남</b>만 알려 줘요. 학생 화면에는 달이 어느 쪽으로 갈지 절대 보여 주지 않아요(아이들이 사진으로 직접 발견하도록). 달의 길 미리 보기는 선생님 모드에서만 보여요.</div>
+      </div>
       <div class="card"><h3 style="margin-top:0">📍 촬영 뒤 달 위치 표시</h3>
         <select id="setMark"></select>
         <div class="note">기준 사진을 쓸 때, 찍은 사진 속 달의 자리를 어떻게 정할지 골라요. '눌러 확인'은 사진이 바로 떠서 달을 톡 누르고(짐작 자리가 미리 표시됨), '자동 저장'은 묻지 않고 나침반 짐작 자리로 저장한 뒤 기록 탭에서 📍로 고쳐요. 자동 저장은 나침반이 있는 기기에서만 돼요.</div>
@@ -335,7 +350,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
         <ol>
           <li>카메라·나침반은 <b>https 주소</b>(예: GitHub Pages)나 앱으로 설치했을 때 켜져요. 파일을 바로 열면 사진 파일·손 기록만 돼요.</li>
           <li>아이폰·아이패드는 관측 화면의 <b>'나침반 켜기'</b>를 눌러 센서를 허용해 주세요.</li>
-          <li>관측 순서(교과서 방식): ① 늘 같은 자리에 서서 ② 📌로 <b>기준 사진</b>(학교 건물·나무가 들어가게, 달은 화면 왼쪽에)을 찍고 ③ 화면에 겹쳐 보이는 노란 윤곽에 건물을 맞춰 📸 ④ 사진 속 달을 손가락으로 눌러 표시(설정에서 '자동 저장'으로 바꾸면 이 단계가 생략돼요) ⑤ ⏱ 알림으로 30분~1시간마다 반복 ⑥ 기록 탭에서 <b>달의 길</b>·<b>기록지 만들기</b>.</li>
+          <li>관측 순서(교과서 방식): ① 늘 같은 자리에 서서 ② 📌로 <b>기준 사진</b>(학교 건물과 달이 함께 들어가게, <b>✅ 좋은 구도</b>가 뜰 때)을 찍고 ③ 화면에 겹쳐 보이는 노란 윤곽에 건물을 맞춰 📸 ④ 사진 속 달을 손가락으로 눌러 표시(설정에서 '자동 저장'으로 바꾸면 이 단계가 생략돼요) ⑤ ⏱ 알림으로 30분~1시간마다 반복 ⑥ 기록 탭에서 <b>달의 길</b>·<b>기록지 만들기</b>.</li>
           <li>기준 사진을 찍을 때와 같은 방향(세로/가로)으로 휴대폰을 들어요. 달이 기준 화면 밖으로 나가면 📌로 새 기준을 찍어요.</li>
           <li>달을 십자선에 맞추고 🎯를 누르면 나침반 오차가 보정돼요(기준 사진 찍기 전에 한 번).</li>
           <li>삼각대로 고정하고 ⏱ <b>자동 촬영</b>을 켜 두면, 나중에 <b>겹쳐 보기</b>로 달이 지나간 길이 한 장에 나와요.</li>
@@ -343,7 +358,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
           <li>기록은 이 기기 안에만 저장돼요. 다른 기기로 옮길 땐 백업 파일을 쓰세요.</li>
         </ol>
       </details>
-      <div class="note">달·태양 위치는 간단한 천문 공식으로 계산해 실제와 1° 안팎 차이가 날 수 있어요. 달 관측 일지 v1.1 · kingkongssam</div>
+      <div class="note">달·태양 위치는 간단한 천문 공식으로 계산해 실제와 1° 안팎 차이가 날 수 있어요. 달 관측 일지 v1.2 · kingkongssam</div>
     </section>
   </main>
 </div>
@@ -428,7 +443,7 @@ let actx=null;
 function beep(n,f){try{if(!S.sound)return;actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();for(let i=0;i<(n||1);i++){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f||880;o.connect(g);g.connect(actx.destination);const t=actx.currentTime+i*0.35;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.start(t);o.stop(t+0.3);}}catch(e){}}
 
 /* ===== 저장 ===== */
-const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask',kid:false};
+const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask',kid:false,obsH:3,pathT:true};
 let S;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('moonlog.settings')||'{}'));}catch(e){S=Object.assign({},DEF);}
 const saveS=()=>{try{localStorage.setItem('moonlog.settings',JSON.stringify(S));}catch(e){}};
 const DB=(()=>{let db=null;
@@ -458,7 +473,7 @@ function fillRecPos(rec,pos){const useRef=!!(curRef&&S.ghost);if(pos){rec.camAz=
   setRel(rec);return useRef;}
 async function saveRefFrom(ph,pos){const now=Date.now();const ref={id:'f'+now,ts:now,day:dayKey(new Date(now)),photo:ph.photo,thumb:ph.thumb,az:pos?Math.round(pos.az):null,alt:pos?Math.round(pos.alt):null,place:S.place};
   try{await DB.putRef(ref);}catch(e){toast('기준 사진을 저장하지 못했어요');}refs.push(ref);refMode=false;$('#btnShot').classList.remove('ref');beep(2,1320);toast(S.kid?'📌 기준 사진 완성! 이제 노란 선에 건물을 맞추고 달을 찍어요':'📌 기준 사진을 저장했어요. 이제 노란 윤곽에 건물을 맞추고 달을 찍어요',3500);await setRef(ref);renderKid();}
-function startRefMode(){refMode=true;$('#btnShot').classList.add('ref');toast('📌 기준 사진: 건물·나무가 들어가게, 달은 화면 왼쪽에 오게 맞추고 📸',3500);}
+function startRefMode(){refMode=true;$('#btnShot').classList.add('ref');toast('📌 기준 사진: 건물과 달이 함께 보이게 맞추고, ✅ 좋은 구도가 뜨면 📸',3500);}
 function openRefModal(){const r=curRef,t=new Date(r.ts);
   const body='<img class="prev" src="'+r.thumb+'" style="max-height:40vh;object-fit:contain"><div class="kv" style="margin-top:10px"><span>찍은 때</span><b>'+fmtDateK(t)+' '+fmtTime(t)+'</b><span>카메라 방향</span><b>'+(r.az!=null?dirName(r.az)+' '+r.az+'° · 고도 '+r.alt+'°':'기록 없음')+'</b></div><label class="row" style="gap:8px;margin-top:12px;cursor:pointer"><input type="checkbox" id="refGhostTg"'+(S.ghost?' checked':'')+'> 카메라 화면에 기준 윤곽 겹쳐 보이기</label><label class="f" style="margin-top:10px">촬영 뒤 달 위치 표시<select id="refMarkSel">'+MARK_OPTS+'</select></label><div class="note">같은 자리에서 이 윤곽에 건물을 맞추고 찍으면 「달의 길」 그림이 만들어져요. 기준 찍을 때와 같은 방향(세로/가로)으로 들어요. 관측 장소를 바꾸면 새로 찍어요.</div>';
   openModal('📌 기준 사진',body,[{label:'기준 해제',cls:'danger',fn:async()=>{await setRef(null);closeModal();toast('기준을 해제했어요');}},{label:'새로 찍기',fn:()=>{closeModal();startRefMode();}},{label:'닫기',cls:'primary',fn:closeModal}]);
@@ -489,7 +504,7 @@ function renderKid(){if(!S.kid)return;const today=dayKey(new Date()),hasRef=!!(c
   const step=(!hasRef||refMode)?1:(marked>=2?3:2);
   $$('#kidSteps span').forEach((s,i)=>{s.classList.toggle('on',i===step-1);s.classList.toggle('done',i<step-1);});
   let title,desc,main;
-  if(step===1){title='① 기준 사진 찍기';desc=hasRef?'건물이 보이게 맞추고 다시 찍어요. 달은 화면 왼쪽에!':'늘 설 자리에 서요. 학교 건물이 보이게 맞추고, 달은 화면 왼쪽에 오게 찍어요.';main='📸 기준 사진 찍기';}
+  if(step===1){title='① 기준 사진 찍기';desc=hasRef?'건물과 달이 함께 보이게 맞추고, ✅가 뜨면 다시 찍어요.':'늘 설 자리에 서요. 학교 건물과 달이 함께 보이게 맞추고, ✅가 뜨면 찍어요.';main='📸 기준 사진 찍기';}
   else{title=step===2?'② 달 사진 찍기':'③ 달의 길이 생겼어요!';desc='노란 선에 건물을 딱 맞추고 찍어요.'+(n?' 지금까지 '+n+'장.':'')+(Timer.isOn()?' ⏰ 다음 '+Timer.left():'');main='📸 달 찍기';}
   setHTML($('#kidTitle'),title);setHTML($('#kidDesc'),desc);setHTML($('#kidMain'),main);
   let sub='';if(Sensor.needPerm()&&!Sensor.isEnabled())sub+='<button class="btn sm primary" id="kidSensor">🧭 나침반 켜기</button>';
@@ -587,7 +602,15 @@ function updateOverlay(){const now=new Date();const nToday=records.filter(r=>r.d
     if(Sensor.needPerm()&&!Sensor.isEnabled())setHTML(ro,'<button class="btn sm primary" id="btnSensor">🧭 나침반 켜기</button><span>방위·고도 자동 기록</span>');
     else if(Sensor.waiting())setHTML(ro,'<span>🧭 나침반 준비 중…</span>');
     else setHTML(ro,'<span>🧭 나침반 센서가 없어요 — 촬영한 뒤 방위·고도를 직접 적어요</span>');}
-  if(refMode){setHTML(guide,'📌 기준 사진: 건물·나무가 들어가게,<br>달은 화면 왼쪽에 오게 맞추고 📸');cross.classList.remove('hit');drawFinder(null);return;}
+  if(refMode){const fc=frameCheck(pos);let g;
+    if(!fc)g='📌 기준 사진: 건물과 달이 함께 보이게 맞추고 📸';
+    else if(fc.none)g='지금부터 '+(S.obsH||3)+'시간 동안 달이 지평선 아래예요';
+    else if(!fc.nowIn)g='📌 건물과 <b>달</b>이 함께 화면에 들어오게 맞춰요';
+    else if(fc.ok)g='✅ 좋은 구도예요! 📸 찍어요'+(S.kid?'':'<br><span style="font-weight:600;font-size:13px">앞으로 '+(S.obsH||3)+'시간 동안 달이 이 화면 안에 있어요</span>');
+    else if(!fc.fits)g=S.kid?'⚠️ 화면이 좁아요<br>'+(fc.portrait?'휴대폰을 <b>가로로</b> 들어 보세요':'선생님께 말해요'):'⚠️ 화면이 좁아 '+(S.obsH||3)+'시간 동안의 달이 다 안 들어가요<br>'+(fc.portrait?'가로로 들기 · ':'')+'설정에서 관측 시간 줄이기';
+    else g='⚠️ 이 구도로는 '+fmtTime(fc.outAt)+'쯤 달이 화면을 벗어나요<br>건물이 보이게 하면서 다시 맞춰 보세요';
+    cross.classList.toggle('hit',!!(fc&&fc.ok&&fc.nowIn));setHTML(guide,g);drawFinder(null);drawPathOv(fc);return;}
+  drawPathOv(null);
   if(ghostOn){const ref=curRef,parts=[];let hit=false;
     if(pos&&ref.az!=null){const dAz=norm180(ref.az-pos.az),dAlt=ref.alt-pos.alt;hit=Math.abs(dAz)<=4&&Math.abs(dAlt)<=4;
       if(hit)parts.push('✅ 기준 방향 맞음');else{const p=[];if(Math.abs(dAz)>4)p.push(dAz>0?'오른쪽 '+Math.round(Math.abs(dAz))+'° →':'← 왼쪽 '+Math.round(Math.abs(dAz))+'°');if(Math.abs(dAlt)>4)p.push(dAlt>0?'↑ 위 '+Math.round(Math.abs(dAlt))+'°':'↓ 아래 '+Math.round(Math.abs(dAlt))+'°');parts.push('📌 기준 방향으로: '+p.join(' '));}
@@ -601,6 +624,25 @@ function updateOverlay(){const now=new Date();const nToday=records.filter(r=>r.d
       if(hit)setHTML(guide,'🎯 달이 십자선 안에 있어요!');else{const p=[];if(Math.abs(dAz)>6)p.push(dAz>0?'오른쪽으로 '+Math.round(Math.abs(dAz))+'° →':'← 왼쪽으로 '+Math.round(Math.abs(dAz))+'°');if(Math.abs(dAlt)>6)p.push(dAlt>0?'↑ 위로 '+Math.round(Math.abs(dAlt))+'°':'↓ 아래로 '+Math.round(Math.abs(dAlt))+'°');setHTML(guide,p.join('   '));}
       drawFinder({dAz,dAlt,hit});}}
   else{cross.classList.remove('hit');setHTML(guide,'');drawFinder(null);}}
+/* 기준 구도 판정: 관측할 시간 동안 달이 이 화면 안에 머무는지 (방향은 알려 주지 않음) */
+function frameCheck(pos){if(!pos)return null;const now=Date.now(),f=camFov(),H=(S.obsH||3)*60,pts=[];let ok=true,outAt=null,nowIn=null,vis=0;
+  // 화면에 실제로 보이는 부분(가장자리가 잘려 보임)만 기준으로
+  const v=$('#video'),vw=v.videoWidth||3,vh=v.videoHeight||4,ew=v.clientWidth||vw,eh=v.clientHeight||vh,sc=Math.max(ew/vw,eh/vh),lx=Math.min(1,ew/(vw*sc))/2-0.06,ly=Math.min(1,eh/(vh*sc))/2-0.08;
+  for(let m=0;m<=H;m+=10){const t=new Date(now+m*60000),p=Astro.moon(t,S.lat,S.lng);if(p.alt<=2)continue;vis++;
+    const dx=norm180(p.az-pos.az)/f.h,dy=(p.alt-pos.alt)/f.v,inside=Math.abs(dx)<=lx&&Math.abs(dy)<=ly;
+    if(m===0)nowIn=inside;pts.push({t,dx,dy,inside});if(!inside&&ok){ok=false;outAt=t;}}
+  if(!vis)return{none:true};
+  // 어느 방향으로 돌려도 다 안 들어가는 경우(화면이 좁음) — 방향은 알려 주지 않고 방법만
+  const xs=pts.map(q=>q.dx),ys=pts.map(q=>q.dy),fits=(Math.max(...xs)-Math.min(...xs))<=2*lx&&(Math.max(...ys)-Math.min(...ys))<=2*ly;
+  return{ok,outAt,nowIn,pts,fits,portrait:eh>ew};}
+function drawPathOv(fc){const c=$('#pathOv');const show=!!(fc&&fc.pts&&refMode&&!S.kid&&S.pathT!==false);c.classList.toggle('hidden',!show);if(!show)return;
+  const v=$('#video'),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;if(c.width!==Math.round(r.width*dpr)){c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);}
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,r.width,r.height);
+  const vw=v.videoWidth||3,vh=v.videoHeight||4,s=Math.max(r.width/vw,r.height/vh),ox=(r.width-vw*s)/2,oy=(r.height-vh*s)/2;
+  const P=q=>({x:ox+(0.5+q.dx)*vw*s,y:oy+(0.5-q.dy)*vh*s});
+  ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,213,107,.85)';ctx.lineWidth=2;ctx.beginPath();fc.pts.forEach((q,i)=>{const p=P(q);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.stroke();ctx.setLineDash([]);
+  ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+  fc.pts.forEach(q=>{if(q.t.getMinutes()%60>=10&&q!==fc.pts[0])return;const p=P(q);ctx.fillStyle=q.inside?'#ffd56b':'#ff7b7b';ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(fmtTime(q.t),p.x,p.y-9);});}
 function drawFinder(d){const c=$('#finder'),dpr=window.devicePixelRatio||1,SZ=100;if(c.width!==Math.round(SZ*dpr)){c.width=Math.round(SZ*dpr);c.height=Math.round(SZ*dpr);}const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,SZ,SZ);const cx=50,cy=50,R=46;
   ctx.fillStyle='rgba(5,8,25,.55)';ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
@@ -795,7 +837,7 @@ function infoShift(n){const d=parseKey(infoDay);d.setDate(d.getDate()+n);infoDay
 const CITIES=[['포항',36.019,129.343],['경주',35.856,129.225],['대구',35.871,128.601],['안동',36.568,128.729],['구미',36.120,128.345],['울산',35.538,129.311],['부산',35.180,129.076],['창원',35.228,128.681],['서울',37.567,126.978],['인천',37.456,126.705],['수원',37.264,127.029],['춘천',37.881,127.730],['강릉',37.752,128.876],['대전',36.350,127.385],['세종',36.480,127.289],['청주',36.642,127.489],['천안',36.815,127.114],['전주',35.824,127.148],['광주',35.160,126.853],['제주',33.500,126.531]];
 function renderSettings(){const sel=$('#setCity');sel.innerHTML='<option value="">도시 고르기…</option>'+CITIES.map(c=>'<option value="'+c[0]+'">'+c[0]+'</option>').join('');sel.value=CITIES.some(c=>c[0]===S.place)?S.place:'';
   $('#setLat').value=S.lat;$('#setLng').value=S.lng;$('#setPlace').value=S.place;$('#setName').value=S.name;$('#setSound').checked=!!S.sound;
-  $('#setMark').innerHTML=MARK_OPTS;$('#setMark').value=S.markMode;
+  $('#setMark').innerHTML=MARK_OPTS;$('#setMark').value=S.markMode;$('#setObs').value=String(S.obsH||3);$('#setPathT').checked=S.pathT!==false;
   $('#setOff').textContent='현재 보정값: 방위 '+(S.azOff>=0?'+':'')+S.azOff.toFixed(1)+'° · 고도 '+(S.altOff>=0?'+':'')+S.altOff.toFixed(1)+'°';
   $('#setStorage').textContent='저장된 기록: '+records.length+'개 (이 기기 안에만 저장돼요)';}
 function applyLoc(){S.lat=clamp(+$('#setLat').value||0,-89.9,89.9);S.lng=clamp(+$('#setLng').value||0,-180,180);S.place=$('#setPlace').value.trim()||'우리 학교';saveS();updateTopChip();}
@@ -851,6 +893,7 @@ function bind(){
   $('#setName').onchange=()=>{S.name=$('#setName').value.trim();saveS();};
   $('#setSound').onchange=()=>{S.sound=$('#setSound').checked;saveS();};
   $('#setMark').onchange=()=>{S.markMode=$('#setMark').value;saveS();};
+  $('#setObs').onchange=()=>{S.obsH=+$('#setObs').value;saveS();};$('#setPathT').onchange=()=>{S.pathT=$('#setPathT').checked;saveS();};
   $('#btnGps').onclick=()=>{if(!navigator.geolocation){toast('위치 기능을 쓸 수 없어요');return;}toast('위치를 찾는 중…');navigator.geolocation.getCurrentPosition(p=>{S.lat=+p.coords.latitude.toFixed(4);S.lng=+p.coords.longitude.toFixed(4);S.place='현재 위치';saveS();renderSettings();updateTopChip();toast('위치를 찾았어요');},()=>toast('위치를 가져오지 못했어요. 도시를 골라 주세요'),{enableHighAccuracy:true,timeout:12000,maximumAge:60000});};
   $('#btnOffReset').onclick=()=>{S.azOff=0;S.altOff=0;saveS();renderSettings();toast('보정값을 지웠어요');};
   $('#btnBackup').onclick=()=>downloadBlob(new Blob([JSON.stringify({app:'moonlog',version:2,settings:S,records,refs})],{type:'application/json'}),'달관측일지_백업_'+fmtDate(new Date())+'.json');
