@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4b942">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>데스크메이트 폰</title>
+<style>
+:root{--ink:#2b2d42;--soft:#6b6f85;--bg:#faf7f2;--card:#fff;--accent:#f4b942;--line:#e8e1d6;--danger:#b43c3c;--ok:#2e8b57}
+@media (prefers-color-scheme:dark){:root{--ink:#eceaf5;--soft:#a7a9bb;--bg:#17181f;--card:#23242e;--line:#363845}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:16px;line-height:1.5}
+header{position:sticky;top:0;z-index:5;background:var(--accent);color:#2b2d42;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1}
+header button{background:#fff8;border:none;border-radius:10px;padding:6px 10px;font-size:14px;color:#2b2d42}
+#status{font-size:12px;color:#2b2d42aa}
+main{max-width:720px;margin:0 auto;padding:12px 16px calc(90px + env(safe-area-inset-bottom))}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border:none;padding:10px 0 8px;font-size:12px;color:var(--soft)}
+nav button.on{color:var(--ink);font-weight:bold}
+nav button span{display:block;font-size:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+.card.sticky{border:none;color:#2b2d42}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+h2{font-size:15px;color:var(--soft);margin:18px 0 6px}
+input,textarea,select,button{font:inherit}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}
+textarea{min-height:90px;resize:vertical}
+.btn{border:none;border-radius:12px;padding:12px 16px;background:var(--accent);color:#2b2d42;font-weight:bold;width:100%;margin-top:8px}
+.btn.sm{width:auto;padding:8px 12px;margin:0;font-weight:normal;font-size:14px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.title{font-weight:bold}
+.meta{font-size:13px;color:var(--soft)}
+.when{display:inline-block;background:var(--accent);color:#2b2d42;border-radius:8px;padding:1px 8px;font-size:13px;margin-right:6px}
+.date-h{font-size:14px;margin:16px 0 4px;color:var(--ink);font-weight:bold}
+.date-h.today{color:#d9a235}
+.fab{position:fixed;right:18px;bottom:calc(70px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;font-size:30px;color:#2b2d42;box-shadow:0 6px 18px #0003;z-index:6}
+.sheet{position:fixed;inset:0;background:#0006;display:none;z-index:10;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.sheet>div{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;background:var(--card);color:var(--ink)}
+.chip.on{background:var(--accent);color:#2b2d42;border-color:var(--accent)}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid #0002;display:inline-block}
+.dot.on{border-color:#2b2d42}
+.empty{color:var(--soft);text-align:center;padding:30px 0}
+.pre{white-space:pre-wrap;word-break:break-word}
+@media (min-width:720px){nav{position:sticky;bottom:auto;top:0;max-width:720px;margin:0 auto;border:1px solid var(--line);border-radius:0 0 14px 14px}main{padding-bottom:30px}.fab{right:calc(50% - 360px + 18px);bottom:28px}}
+</style>
+</head>
+<body>
+<header><h1 id="h1">데스크메이트</h1><span id="status"></span><button onclick="syncNow(true)">⟳</button><button onclick="openSettings()">⚙️</button></header>
+<main id="main"></main>
+<nav>
+  <button id="nav-sched" class="on" onclick="go('sched')"><span>📅</span>일정</button>
+  <button id="nav-memo" onclick="go('memo')"><span>📝</span>메모</button>
+  <button id="nav-sticky" onclick="go('sticky')"><span>📌</span>스티커</button>
+</nav>
+<button class="fab" onclick="addNew()">＋</button>
+
+<div class="sheet" id="sheet"><div id="sheet-body"></div></div>
+
+<script>
+// ------------------------------------------------------------ 저장소
+const LS='deskmate_phone_v1';
+let S=JSON.parse(localStorage.getItem(LS)||'{}');
+S.cfg=S.cfg||{url:'',code:''}; S.data=S.data||{schedules:[],memos:[],stickies:[]}; S.tomb=S.tomb||{schedules:{},memos:{},stickies:{}};
+function save(){localStorage.setItem(LS,JSON.stringify(S))}
+const KINDS=['schedules','memos','stickies'];
+const WD=['월','화','수','목','금','토','일'];
+const COLORS={yellow:'#fff6a8',green:'#d8f5c8',pink:'#ffd9e6',blue:'#d6ecff',purple:'#e9ddff',gray:'#eeeeee'};
+const REPEAT={'':'한 번',daily:'매일',weekly:'매주',monthly:'매달',weekdays:'평일'};
+let tab='sched';
+const now=()=>Date.now();
+const uid=()=>Math.random().toString(16).slice(2,12);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parseISO(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+
+// ------------------------------------------------------------ 동기화 (PC 앱과 같은 규칙: u가 큰 쪽이 이김, del=묘비)
+function url(path){return S.cfg.url.replace(/\/+$/,'')+'/deskmate/'+encodeURIComponent(S.cfg.code)+(path?'/'+path:'')+'.json'}
+function merge(kind, remote){
+  const local=S.data[kind], tomb=S.tomb[kind]; const by={}; local.forEach(x=>by[x.id]=x); const push={}; let changed=false; remote=remote||{};
+  for(const [rid,r] of Object.entries(remote)){
+    if(!r||typeof r!=='object') continue; const ru=+(r.u||0);
+    if(r.del){ if(by[rid]&&+(by[rid].u||0)<=ru){delete by[rid];tomb[rid]=ru;changed=true} else if(!by[rid]) tomb[rid]=Math.max(tomb[rid]||0,ru); continue }
+    if(tomb[rid]&&tomb[rid]>=ru){push[rid]={del:true,u:tomb[rid],id:rid};continue}
+    const loc=by[rid]; if(!loc||+(loc.u||0)<ru){const it={...r};delete it.del;it.id=rid;by[rid]=it;changed=true}
+  }
+  for(const [lid,loc] of Object.entries(by)){const r=remote[lid]; const lu=+(loc.u||0); if(!r||typeof r!=='object'||+(r.u||0)<lu){const o={...loc};delete o.notified;o.u=lu;o.del=false;push[lid]=o}}
+  for(const [tid,tu] of Object.entries(tomb)){const r=remote[tid]; if(r&&typeof r==='object'&&(!r.del||+(r.u||0)<tu)) push[tid]={del:true,u:tu,id:tid}}
+  S.data[kind]=Object.values(by); return {push,changed};
+}
+let syncing=false;
+async function syncNow(manual){
+  if(!S.cfg.url||!S.cfg.code){setStatus(manual?'설정에서 주소·코드를 넣어 주세요':'');return}
+  if(syncing) return; syncing=true; setStatus('동기화 중…');
+  try{
+    const res=await fetch(url('')); if(!res.ok) throw new Error('서버 오류 '+res.status+(res.status==401?' (규칙 확인)':''));
+    const remote=(await res.json())||{}; let any=false;
+    for(const k of KINDS){const {push,changed}=merge(k,remote[k]); any=any||changed;
+      if(Object.keys(push).length){const r2=await fetch(url(k),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(push)}); if(!r2.ok) throw new Error('올리기 실패 '+r2.status)}}
+    await fetch(url('meta'),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone_seen:now()})});
+    sortAll(); save(); setStatus('동기화됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})); render();
+  }catch(e){setStatus('실패: '+(e.message||e))}
+  syncing=false;
+}
+function setStatus(t){document.getElementById('status').textContent=t}
+function sortAll(){S.data.schedules.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))); S.data.memos.sort((a,b)=>(b.u||0)-(a.u||0))}
+function touch(kind,item){item.u=now(); sortAll(); save(); render(); scheduleSync()}
+function remove(kind,id){S.tomb[kind][id]=now(); S.data[kind]=S.data[kind].filter(x=>x.id!==id); save(); render(); scheduleSync()}
+let syncT=null; function scheduleSync(){clearTimeout(syncT); syncT=setTimeout(()=>syncNow(false),1500)}
+setInterval(()=>syncNow(false),15000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden) syncNow(false)});
+
+// ------------------------------------------------------------ 일정
+function occurs(s,d){const st=parseISO(s.date); if(d<st) return false; const r=s.repeat||'';
+  if(!r) return iso(d)===s.date; if(r==='daily') return true; if(r==='weekdays') return d.getDay()>=1&&d.getDay()<=5;
+  if(r==='weekly') return d.getDay()===st.getDay(); if(r==='monthly') return d.getDate()===st.getDate(); return false}
+function fmtTime(t){if(!t) return '종일'; const [h,m]=t.split(':').map(Number); return (h<12?'오전 ':'오후 ')+(h%12||12)+'시'+(m?' '+m+'분':'')}
+function renderSched(){
+  const today=new Date(); today.setHours(0,0,0,0); let html='';
+  for(let i=0;i<30;i++){const d=new Date(today); d.setDate(d.getDate()+i); const list=S.data.schedules.filter(s=>occurs(s,d)); if(!list.length&&i>0) continue;
+    list.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    html+=`<div class="date-h ${i===0?'today':''}">${i===0?'오늘 · ':i===1?'내일 · ':''}${d.getMonth()+1}월 ${d.getDate()}일 (${WD[(d.getDay()+6)%7]})</div>`;
+    if(!list.length) html+=`<div class="meta">일정 없음</div>`;
+    for(const s of list) html+=`<div class="card" onclick="editSched('${s.id}')"><span class="when">${fmtTime(s.time)}</span><span class="title">${esc(s.title)}</span>${s.repeat?`<span class="meta"> · ${REPEAT[s.repeat]||s.repeat}</span>`:''}</div>`}
+  if(!S.data.schedules.length) html+='<div class="empty">일정이 없어요. ＋ 로 추가하거나 PC에서 등록하면 여기에 보여요.</div>';
+  return html}
+function editSched(id){const s=id?S.data.schedules.find(x=>x.id===id):{id:uid(),title:'',date:iso(new Date()),time:'',repeat:'',u:0};
+  sheet(`<h2 style="margin-top:0">${id?'일정 고치기':'새 일정'}</h2>
+  <input id="f-title" placeholder="제목 (예: 교직원 회의)" value="${esc(s.title)}">
+  <div class="row" style="margin-top:8px"><input id="f-date" type="date" value="${s.date}"><input id="f-time" type="time" value="${s.time||''}"></div>
+  <div class="chips" id="rep">${Object.entries(REPEAT).map(([k,v])=>`<button class="chip ${(s.repeat||'')===k?'on':''}" data-k="${k}" onclick="pick(this)">${v}</button>`).join('')}</div>
+  <button class="btn" onclick="saveSched('${s.id}',${id?1:0})">저장</button>
+  ${id?`<button class="btn danger" onclick="if(confirm('지울까요?')){remove('schedules','${id}');closeSheet()}">지우기</button>`:''}
+  <button class="btn ghost" onclick="closeSheet()">닫기</button>`)}
+function pick(b){[...b.parentNode.children].forEach(c=>c.classList.remove('on')); b.classList.add('on')}
+function saveSched(id,exists){const t=v('f-title').trim(); if(!t){alert('제목을 적어 주세요');return}
+  const rep=document.querySelector('#rep .on').dataset.k||null; let s=S.data.schedules.find(x=>x.id===id);
+  if(!s){s={id,notified:''};S.data.schedules.push(s)} Object.assign(s,{title:t,date:v('f-date')||iso(new Date()),time:v('f-time')||null,repeat:rep}); touch('schedules',s); closeSheet()}
+
+// ------------------------------------------------------------ 메모
+function renderMemo(){if(!S.data.memos.length) return '<div class="empty">메모가 없어요.</div>';
+  return S.data.memos.map(m=>`<div class="card" onclick="editMemo('${m.id}')"><div class="pre">${esc(m.text).slice(0,300)}</div><div class="meta">${m.created||''}</div></div>`).join('')}
+function editMemo(id){const m=id?S.data.memos.find(x=>x.id===id):{id:uid(),text:''};
+  sheet(`<h2 style="margin-top:0">${id?'메모':'새 메모'}</h2><textarea id="f-text" style="min-height:160px">${esc(m.text)}</textarea>
+  <button class="btn" onclick="saveMemo('${m.id}')">저장</button>
+  ${id?`<button class="btn danger" onclick="if(confirm('지울까요?')){remove('memos','${id}');closeSheet()}">지우기</button>`:''}
+  <button class="btn ghost" onclick="closeSheet()">닫기</button>`)}
+function saveMemo(id){const t=v('f-text').trim(); if(!t) return; let m=S.data.memos.find(x=>x.id===id);
+  if(!m){m={id,created:new Date().toISOString().slice(0,16).replace('T',' ')};S.data.memos.unshift(m)} m.text=t; touch('memos',m); closeSheet()}
+
+// ------------------------------------------------------------ 스티커
+function renderSticky(){if(!S.data.stickies.length) return '<div class="empty">스티커가 없어요.</div>';
+  return S.data.stickies.map(t=>`<div class="card sticky" style="background:${COLORS[t.color]||COLORS.yellow}" onclick="editSticky('${t.id}')"><div class="pre">${esc(t.text)||'<span style=\"opacity:.5\">(빈 스티커)</span>'}</div></div>`).join('')}
+function editSticky(id){const t=id?S.data.stickies.find(x=>x.id===id):{id:uid(),text:'',color:'yellow',w:220,h:180,on_top:false};
+  sheet(`<h2 style="margin-top:0">${id?'스티커':'새 스티커'}</h2><textarea id="f-text" style="background:${COLORS[t.color]||COLORS.yellow};color:#2b2d42">${esc(t.text)}</textarea>
+  <div class="chips" id="col">${Object.entries(COLORS).map(([k,c])=>`<span class="dot ${t.color===k?'on':''}" data-k="${k}" style="background:${c}" onclick="pick(this);document.getElementById('f-text').style.background='${c}'"></span>`).join('')}</div>
+  <button class="btn" onclick="saveSticky('${t.id}')">저장</button>
+  ${id?`<button class="btn danger" onclick="if(confirm('지울까요?')){remove('stickies','${id}');closeSheet()}">지우기</button>`:''}
+  <button class="btn ghost" onclick="closeSheet()">닫기</button>`)}
+function saveSticky(id){let t=S.data.stickies.find(x=>x.id===id); const col=document.querySelector('#col .on')?.dataset.k||'yellow';
+  if(!t){t={id,x:null,y:null,w:220,h:180,on_top:false};S.data.stickies.push(t)} t.text=v('f-text'); t.color=col; touch('stickies',t); closeSheet()}
+
+// ------------------------------------------------------------ 공통
+function v(id){return document.getElementById(id).value}
+function sheet(html){document.getElementById('sheet-body').innerHTML=html; document.getElementById('sheet').classList.add('open')}
+function closeSheet(){document.getElementById('sheet').classList.remove('open')}
+document.getElementById('sheet').addEventListener('click',e=>{if(e.target.id==='sheet') closeSheet()});
+function go(t){tab=t; ['sched','memo','sticky'].forEach(k=>document.getElementById('nav-'+k).classList.toggle('on',k===t)); render()}
+function addNew(){tab==='sched'?editSched(''):tab==='memo'?editMemo(''):editSticky('')}
+function render(){document.getElementById('main').innerHTML=tab==='sched'?renderSched():tab==='memo'?renderMemo():renderSticky()}
+function openSettings(){sheet(`<h2 style="margin-top:0">⚙️ 설정 — PC와 연결</h2>
+  <label class="meta">Firebase DB 주소</label><input id="f-url" placeholder="https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app" value="${esc(S.cfg.url)}">
+  <label class="meta" style="display:block;margin-top:8px">동기화 코드 (PC 설정에 있는 것)</label><input id="f-code" placeholder="DM-XXXX-XXXX-XXXX" value="${esc(S.cfg.code)}" autocapitalize="characters">
+  <button class="btn" onclick="S.cfg={url:v('f-url').trim(),code:v('f-code').trim().toUpperCase()};save();closeSheet();syncNow(true)">저장하고 연결</button>
+  <button class="btn ghost" onclick="closeSheet()">닫기</button>
+  <p class="meta">PC 데스크메이트 → 설정 → 📱 폰과 동기화에 있는 주소·코드를 똑같이 넣어요. 이 페이지를 홈 화면에 추가하면 앱처럼 쓸 수 있어요.</p>`)}
+sortAll(); render();
+if(!S.cfg.url||!S.cfg.code) openSettings(); else syncNow(false);
+</script>
+</body>
+</html>
