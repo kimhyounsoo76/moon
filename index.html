@@ -220,7 +220,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
         <div class="kidtop" id="kidTop">
           <div class="steps" id="kidSteps"><span>① 기준 사진</span><span>② 달 찍기</span><span>③ 달의 길</span></div>
           <div class="chip" id="kidClock">--:--</div>
-          <div class="kidgear" id="kidGear" title="선생님 모드: 길게 누르기">⚙</div>
+          <div class="kidgear" id="kidGear" title="설정">⚙</div>
         </div>
         <div class="ov level" id="level"><i id="levelLine"></i></div>
         <div class="ov cross" id="stageCross"></div>
@@ -323,9 +323,13 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
         <label class="f">이름 또는 모둠 (기록지·사진에 적혀요)<input type="text" id="setName" placeholder="예) 6학년 1반 2모둠"></label>
         <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="setSound"> 촬영·알림 소리 켜기</label>
       </div>
-      <div class="card"><h3 style="margin-top:0">👧 학생 모드</h3>
-        <div class="note" style="margin-top:0">학생이 쓰는 태블릿용 단순 화면이에요. 탭·설정·나침반 숫자가 모두 숨고 <b>① 기준 사진 → ② 달 찍기 → ③ 달의 길</b> 세 단계만 큰 버튼으로 보여요. 장소·관측자 이름·⏱ 간격 알림을 먼저 맞춰 두고 켜 주세요. 선생님 모드로 돌아오려면 학생 화면 오른쪽 위 ⚙를 <b>2초간 길게</b> 누르면 돼요.</div>
-        <button class="btn primary" id="btnKid" style="margin-top:10px">👧 학생 모드 켜기</button>
+      <div class="card"><h3 style="margin-top:0">👧 학생 모드 · 🔒 선생님 비밀번호</h3>
+        <div class="note" style="margin-top:0">앱을 열면 <b>학생 모드</b>가 먼저 나와요. 탭·설정·나침반 숫자가 모두 숨고 <b>① 기준 사진 → ② 달 찍기 → ③ 달의 길</b> 세 단계만 큰 버튼으로 보여요. 선생님 모드는 학생 화면 오른쪽 위 <b>⚙ → 🔒 선생님 모드 → 비밀번호</b>로 들어와요. 장소·관측자 이름·⏱ 간격 알림은 선생님 모드에서 먼저 맞춰 두세요.</div>
+        <label class="note" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="setKidStart"> 앱을 열 때 학생 모드로 시작 (권장)</label>
+        <div class="btnrow" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" id="btnKid">👧 학생 모드 켜기</button>
+          <button class="btn" id="btnPin">🔒 비밀번호 바꾸기</button>
+        </div>
       </div>
       <div class="card"><h3 style="margin-top:0">🕐 오늘 관측할 시간</h3>
         <select id="setObs"><option value="2">2시간</option><option value="3">3시간 (기본)</option><option value="4">4시간</option><option value="5">5시간</option></select>
@@ -358,7 +362,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
           <li>기록은 이 기기 안에만 저장돼요. 다른 기기로 옮길 땐 백업 파일을 쓰세요.</li>
         </ol>
       </details>
-      <div class="note">달·태양 위치는 간단한 천문 공식으로 계산해 실제와 1° 안팎 차이가 날 수 있어요. 달 관측 일지 v1.2 · kingkongssam</div>
+      <div class="note">달·태양 위치는 간단한 천문 공식으로 계산해 실제와 1° 안팎 차이가 날 수 있어요. 달 관측 일지 v1.3 · kingkongssam</div>
     </section>
   </main>
 </div>
@@ -443,7 +447,7 @@ let actx=null;
 function beep(n,f){try{if(!S.sound)return;actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();for(let i=0;i<(n||1);i++){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f||880;o.connect(g);g.connect(actx.destination);const t=actx.currentTime+i*0.35;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.start(t);o.stop(t+0.3);}}catch(e){}}
 
 /* ===== 저장 ===== */
-const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask',kid:false,obsH:3,pathT:true};
+const DEF={lat:36.019,lng:129.343,place:'포항',name:'',sound:true,azOff:0,altOff:0,refId:null,ghost:true,markMode:'ask',kid:true,kidStart:true,obsH:3,pathT:true};
 let S;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('moonlog.settings')||'{}'));}catch(e){S=Object.assign({},DEF);}
 const saveS=()=>{try{localStorage.setItem('moonlog.settings',JSON.stringify(S));}catch(e){}};
 const DB=(()=>{let db=null;
@@ -495,6 +499,36 @@ function openMarkModal(rec,after){if(!rec.photo){toast('사진이 없는 기록�
   if(img.complete&&img.naturalWidth)init();else img.onload=init;place();
   wrap.addEventListener('click',e=>{const r=img.getBoundingClientRect();if(!r.width)return;cur={x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)};place();});}
 /* ===== 학생 모드 ===== */
+/* ===== 선생님 비밀번호 ===== */
+const Pin=(()=>{const K='moonlog.pin',DEF_PIN='091217';
+  async function hash(p){const t='moonlog:'+p;try{if(crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return 's'+[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}}catch(e){}
+    let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return 'f'+h.toString(16);}
+  const get=()=>{try{return localStorage.getItem(K)||'';}catch(e){return '';}};
+  const has=()=>true; // 기본 비밀번호가 있어 늘 잠겨 있음
+  const target=async()=>get()||await hash(DEF_PIN);
+  let fails=0,lockUntil=0;
+  const field=(id,ph)=>'<input id="'+id+'" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" placeholder="'+ph+'" style="width:100%;font-size:24px;letter-spacing:8px;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:inherit;margin-top:8px">';
+  const ok=p=>/^[0-9]{4,8}$/.test(p);
+  function create(change,after){
+    openModal('🔒 비밀번호 바꾸기','<div class="note" style="margin-top:0">학생 모드에서 선생님 모드로 들어올 때 쓰는 비밀번호예요. <b>숫자 4~8자리</b>. 학생에게 알려 주지 마세요.</div>'+field('pin1','새 비밀번호')+field('pin2','한 번 더'),
+      [{label:'취소',fn:closeModal},{label:'저장',cls:'primary',fn:async()=>{const a=$('#pin1').value,b=$('#pin2').value;if(!ok(a)){toast('숫자 4~8자리로 정해 주세요');return;}if(a!==b){toast('두 번 적은 비밀번호가 달라요');return;}
+        try{localStorage.setItem(K,await hash(a));}catch(e){toast('비밀번호를 저장하지 못했어요');return;}closeModal();toast('🔒 비밀번호를 저장했어요');renderSettings();if(after)after();}}]);
+    setTimeout(()=>{const e=$('#pin1');if(e)e.focus();},120);}
+  function ask(after){
+    openModal('🔒 선생님 모드','<div class="note" style="margin-top:0">선생님 비밀번호를 넣어 주세요.</div>'+field('pinIn','비밀번호')+'<div style="text-align:right;margin-top:10px"><a href="#" id="pinForgot" class="note" style="text-decoration:underline">비밀번호를 잊었어요</a></div>',
+      [{label:'취소',fn:closeModal},{label:'들어가기',cls:'primary',fn:check}]);
+    const inp=$('#pinIn');setTimeout(()=>inp&&inp.focus(),120);inp.onkeydown=e=>{if(e.key==='Enter')check();};
+    $('#pinForgot').onclick=e=>{e.preventDefault();forgot();};
+    async function check(){const now=Date.now();if(now<lockUntil){toast('잠시 뒤에 다시 해 보세요 ('+Math.ceil((lockUntil-now)/1000)+'초)');return;}
+      if((await hash($('#pinIn').value))===(await target())){fails=0;closeModal();after();}
+      else{fails++;$('#pinIn').value='';if(fails>=5){lockUntil=Date.now()+30000;fails=0;toast('5번 틀려서 30초 동안 잠겨요');}else toast('비밀번호가 달라요');}}}
+  function forgot(){openModal('비밀번호를 잊었어요','<div class="note" style="margin-top:0">비밀번호는 이 기기에만 저장돼 있어서 찾을 수 없어요. 초기화하면 <b>이 기기의 관측 기록·기준 사진이 모두 지워지고</b> 비밀번호가 처음 값으로 돌아가요. 계속하려면 아래 칸에 <b>초기화</b>라고 적어 주세요.</div><input id="pinReset" autocomplete="off" style="width:100%;font-size:18px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:inherit;margin-top:8px">',
+    [{label:'취소',fn:closeModal},{label:'모두 지우고 초기화',cls:'danger',fn:async()=>{if($('#pinReset').value.trim()!=='초기화'){toast('"초기화"라고 적어 주세요');return;}
+      try{await DB.clear();await DB.clearRefs();}catch(e){}records=[];refs=[];await setRef(null);try{localStorage.removeItem(K);}catch(e){}closeModal();renderLog();renderKid();toast('초기화했어요. 처음 비밀번호로 들어갈 수 있어요');}}]);}
+  return{has,create,ask};})();
+function kidSettings(){const n=S.name?esc(S.name):'(없음)';
+  openModal('⚙ 설정','<div class="note" style="margin-top:0;line-height:1.8">📍 관측 장소: <b>'+esc(S.place||'')+'</b><br>🙋 관측자: <b>'+n+'</b><br>🕐 관측할 시간: <b>'+(S.obsH||3)+'시간</b></div><div class="note">장소·이름 등은 선생님 모드에서 바꿀 수 있어요.</div>',
+    [{label:'닫기',fn:closeModal},{label:'🔒 선생님 모드',cls:'primary',fn:()=>{closeModal();setTimeout(()=>Pin.ask(()=>{setKid(false);toast('👩‍🏫 선생님 모드');}),80);}}]);}
 function setKid(on){S.kid=!!on;if(on)S.ghost=true;saveS();document.body.classList.toggle('kid',S.kid);
   if(!S.kid){refMode=false;$('#btnShot').classList.remove('ref');}
   showView('cam');renderKid();}
@@ -628,7 +662,8 @@ function updateOverlay(){const now=new Date();const nToday=records.filter(r=>r.d
 function frameCheck(pos){if(!pos)return null;const now=Date.now(),f=camFov(),H=(S.obsH||3)*60,pts=[];let ok=true,outAt=null,nowIn=null,vis=0;
   // 화면에 실제로 보이는 부분(가장자리가 잘려 보임)만 기준으로
   const v=$('#video'),vw=v.videoWidth||3,vh=v.videoHeight||4,ew=v.clientWidth||vw,eh=v.clientHeight||vh,sc=Math.max(ew/vw,eh/vh),lx=Math.min(1,ew/(vw*sc))/2-0.06,ly=Math.min(1,eh/(vh*sc))/2-0.08;
-  for(let m=0;m<=H;m+=10){const t=new Date(now+m*60000),p=Astro.moon(t,S.lat,S.lng);if(p.alt<=2)continue;vis++;
+  const ts=[now];for(let k=Math.ceil(now/600000)*600000;k<=now+H*60000;k+=600000)if(k>now)ts.push(k);
+  for(const tt of ts){const m=Math.round((tt-now)/60000),t=new Date(tt),p=Astro.moon(t,S.lat,S.lng);if(p.alt<=2)continue;vis++;
     const dx=norm180(p.az-pos.az)/f.h,dy=(p.alt-pos.alt)/f.v,inside=Math.abs(dx)<=lx&&Math.abs(dy)<=ly;
     if(m===0)nowIn=inside;pts.push({t,dx,dy,inside});if(!inside&&ok){ok=false;outAt=t;}}
   if(!vis)return{none:true};
@@ -642,7 +677,7 @@ function drawPathOv(fc){const c=$('#pathOv');const show=!!(fc&&fc.pts&&refMode&&
   const P=q=>({x:ox+(0.5+q.dx)*vw*s,y:oy+(0.5-q.dy)*vh*s});
   ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,213,107,.85)';ctx.lineWidth=2;ctx.beginPath();fc.pts.forEach((q,i)=>{const p=P(q);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.stroke();ctx.setLineDash([]);
   ctx.font='bold 12px sans-serif';ctx.textAlign='center';
-  fc.pts.forEach(q=>{if(q.t.getMinutes()%60>=10&&q!==fc.pts[0])return;const p=P(q);ctx.fillStyle=q.inside?'#ffd56b':'#ff7b7b';ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(fmtTime(q.t),p.x,p.y-9);});}
+  fc.pts.forEach((q,i)=>{if(i===0||q.t.getMinutes()!==0)return;const p=P(q);ctx.fillStyle=q.inside?'#ffd56b':'#ff7b7b';ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(fmtTime(q.t),p.x,p.y-9);});}
 function drawFinder(d){const c=$('#finder'),dpr=window.devicePixelRatio||1,SZ=100;if(c.width!==Math.round(SZ*dpr)){c.width=Math.round(SZ*dpr);c.height=Math.round(SZ*dpr);}const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,SZ,SZ);const cx=50,cy=50,R=46;
   ctx.fillStyle='rgba(5,8,25,.55)';ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
@@ -837,7 +872,7 @@ function infoShift(n){const d=parseKey(infoDay);d.setDate(d.getDate()+n);infoDay
 const CITIES=[['포항',36.019,129.343],['경주',35.856,129.225],['대구',35.871,128.601],['안동',36.568,128.729],['구미',36.120,128.345],['울산',35.538,129.311],['부산',35.180,129.076],['창원',35.228,128.681],['서울',37.567,126.978],['인천',37.456,126.705],['수원',37.264,127.029],['춘천',37.881,127.730],['강릉',37.752,128.876],['대전',36.350,127.385],['세종',36.480,127.289],['청주',36.642,127.489],['천안',36.815,127.114],['전주',35.824,127.148],['광주',35.160,126.853],['제주',33.500,126.531]];
 function renderSettings(){const sel=$('#setCity');sel.innerHTML='<option value="">도시 고르기…</option>'+CITIES.map(c=>'<option value="'+c[0]+'">'+c[0]+'</option>').join('');sel.value=CITIES.some(c=>c[0]===S.place)?S.place:'';
   $('#setLat').value=S.lat;$('#setLng').value=S.lng;$('#setPlace').value=S.place;$('#setName').value=S.name;$('#setSound').checked=!!S.sound;
-  $('#setMark').innerHTML=MARK_OPTS;$('#setMark').value=S.markMode;$('#setObs').value=String(S.obsH||3);$('#setPathT').checked=S.pathT!==false;
+  $('#setMark').innerHTML=MARK_OPTS;$('#setMark').value=S.markMode;$('#setObs').value=String(S.obsH||3);$('#setKidStart').checked=S.kidStart!==false;$('#setPathT').checked=S.pathT!==false;
   $('#setOff').textContent='현재 보정값: 방위 '+(S.azOff>=0?'+':'')+S.azOff.toFixed(1)+'° · 고도 '+(S.altOff>=0?'+':'')+S.altOff.toFixed(1)+'°';
   $('#setStorage').textContent='저장된 기록: '+records.length+'개 (이 기기 안에만 저장돼요)';}
 function applyLoc(){S.lat=clamp(+$('#setLat').value||0,-89.9,89.9);S.lng=clamp(+$('#setLng').value||0,-180,180);S.place=$('#setPlace').value.trim()||'우리 학교';saveS();updateTopChip();}
@@ -852,15 +887,14 @@ function bind(){
   $('#btnCalib').onclick=calibrate;
   $('#btnRef').onclick=()=>{if(refMode){refMode=false;$('#btnShot').classList.remove('ref');toast('기준 사진 찍기를 취소했어요');return;}if(curRef)openRefModal();else startRefMode();};
   // 학생 모드
-  $('#btnKid').onclick=()=>{setKid(true);toast('👧 학생 모드예요. 선생님 모드로 돌아가려면 ⚙를 2초간 길게 누르세요',4000);};
+  $('#btnKid').onclick=()=>{if(!Pin.has()){Pin.create(false,()=>{setKid(true);toast('👧 학생 모드예요. 선생님 모드는 ⚙ → 🔒 선생님 모드',4000);});return;}setKid(true);toast('👧 학생 모드예요. 선생님 모드는 ⚙ → 🔒 선생님 모드',4000);};
   $('#kidMain').onclick=()=>{pendingPos=Sensor.get();doCapture(false);};
   $('#kidSub').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
     if(b.id==='kidSensor'){Sensor.enable().then(()=>renderKid());return;}
     if(b.id==='kidPath'){toast('달의 길을 그리는 중…');const c=await buildPath(dayKey(new Date()),false);if(c)previewCanvas('🌙 우리가 찾은 달의 길',c,'달의길_'+dayKey(new Date())+'.jpg','image/jpeg',0.9,'건물 위에서 달이 어느 쪽으로 움직였는지 보여요.');}
     else if(b.id==='kidReref'){if(!confirm('기준 사진을 다시 찍을까요? (자리를 옮겼거나 달이 화면 밖으로 나갔을 때만)'))return;refMode=true;$('#btnShot').classList.add('ref');renderKid();}};
   $('#kidThumbs').onclick=e=>{const t=e.target.closest('.kth');if(!t)return;const rec=records.find(r=>r.id===t.dataset.id);if(rec)openMarkModal(rec);};
-  (()=>{let tm=null;const g=$('#kidGear');const dn=e=>{e.preventDefault();clearTimeout(tm);tm=setTimeout(()=>{tm=null;if(confirm('선생님 모드로 돌아갈까요?')){setKid(false);toast('선생님 모드');}},1500);};const up=()=>{if(tm){clearTimeout(tm);tm=null;toast('선생님 모드로 가려면 2초간 길게 누르세요');}};
-    g.addEventListener('pointerdown',dn);g.addEventListener('pointerup',up);g.addEventListener('pointerleave',()=>{clearTimeout(tm);tm=null;});g.addEventListener('contextmenu',e=>e.preventDefault());})();
+  $('#kidGear').onclick=()=>kidSettings();
   $('#btnTimer').onclick=()=>$('#timerBar').classList.toggle('on');
   $('#tStart').onclick=()=>Timer.toggle();
   $('#readout').addEventListener('click',e=>{if(e.target&&e.target.id==='btnSensor')Sensor.enable();});
@@ -893,6 +927,7 @@ function bind(){
   $('#setName').onchange=()=>{S.name=$('#setName').value.trim();saveS();};
   $('#setSound').onchange=()=>{S.sound=$('#setSound').checked;saveS();};
   $('#setMark').onchange=()=>{S.markMode=$('#setMark').value;saveS();};
+  $('#setKidStart').onchange=()=>{S.kidStart=$('#setKidStart').checked;saveS();};$('#btnPin').onclick=()=>Pin.create(true);
   $('#setObs').onchange=()=>{S.obsH=+$('#setObs').value;saveS();};$('#setPathT').onchange=()=>{S.pathT=$('#setPathT').checked;saveS();};
   $('#btnGps').onclick=()=>{if(!navigator.geolocation){toast('위치 기능을 쓸 수 없어요');return;}toast('위치를 찾는 중…');navigator.geolocation.getCurrentPosition(p=>{S.lat=+p.coords.latitude.toFixed(4);S.lng=+p.coords.longitude.toFixed(4);S.place='현재 위치';saveS();renderSettings();updateTopChip();toast('위치를 찾았어요');},()=>toast('위치를 가져오지 못했어요. 도시를 골라 주세요'),{enableHighAccuracy:true,timeout:12000,maximumAge:60000});};
   $('#btnOffReset').onclick=()=>{S.azOff=0;S.altOff=0;saveS();renderSettings();toast('보정값을 지웠어요');};
@@ -907,6 +942,7 @@ function bind(){
   window.__onBack=()=>{if(!$('#modal').classList.contains('hidden')){closeModal();return true;}if(refMode){refMode=false;$('#btnShot').classList.remove('ref');return true;}if(curView!=='cam'){showView('cam');return true;}return false;};
 }
 async function init(){try{records=await DB.all();refs=await DB.allRefs();}catch(e){toast('기록 저장소를 열 수 없어요 (사생활 보호 모드?)');}
+  if(S.kidStart!==false&&!S.kid){S.kid=true;S.ghost=true;saveS();}
   bind();updateTopChip();Timer.render();renderSettings();document.body.classList.toggle('kid',!!S.kid);
   const r0=refs.find(x=>x.id===S.refId);if(r0)setRef(r0);
   showView('cam');renderKid();setInterval(()=>{Timer.tick();if(S.kid)renderKid();},1000);setInterval(updateTopChip,600000);}
