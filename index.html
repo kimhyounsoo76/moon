@@ -931,6 +931,8 @@ function applyLoc(){S.lat=clamp(+$('#setLat').value||0,-89.9,89.9);S.lng=clamp(+
 /* ===== 이벤트 연결·시작 ===== */
 function bind(){
   $$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.v));
+  // 나침반 권한이 필요한 기기: 화면을 처음 누를 때 자동으로 한 번 요청 (따로 '나침반 켜기'를 안 눌러도 되게)
+  (()=>{let tried=false;const h=()=>{if(tried||!Sensor.needPerm()||Sensor.isEnabled()){document.removeEventListener('pointerup',h,true);return;}tried=true;Sensor.enable().then(()=>{renderKid();});document.removeEventListener('pointerup',h,true);};document.addEventListener('pointerup',h,true);})();
   $('#btnMore').onclick=()=>{const m=$('#moreBar'),o=!m.classList.contains('open');m.classList.toggle('open',o);$('#btnMore').textContent=o?'접기 ▴':'더 보기 ▾';};
   $('#btnShot').onclick=()=>{pendingPos=Sensor.get();doCapture(false);};
   $('#btnRetryCam').onclick=()=>{Cam.stop();Cam.start();};
