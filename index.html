@@ -595,7 +595,7 @@ function renderKid(){if(!S.kid)return;const today=dayKey(new Date()),hasRef=!!(c
   let sub='';if(Sensor.needPerm()&&!Sensor.isEnabled())sub+='<button class="btn sm primary" id="kidSensor">🧭 나침반 켜기</button>';
   if(step>=2){if(marked>=1)sub+='<button class="btn'+(step===3?' primary':'')+'" id="kidPath">🌙 달의 길 보기</button>';sub+='<button class="btn sm" id="kidReref">📌 기준 다시 찍기</button>';}
   setHTML($('#kidSub'),sub);
-  setHTML($('#kidThumbs'),todays.filter(r=>r.thumb).map(r=>'<div class="kth'+(r.mx==null?' need':'')+'" data-id="'+r.id+'"><img src="'+r.thumb+'" alt=""><small>'+fmtTime(new Date(r.ts))+(r.mx==null?' ?':'')+'</small></div>').join(''));}
+  setHTML($('#kidThumbs'),step===1?'':todays.filter(r=>r.thumb).map(r=>'<div class="kth'+(r.mx==null?' need':'')+'" data-id="'+r.id+'"><img src="'+r.thumb+'" alt=""><small>'+fmtTime(new Date(r.ts))+(r.mx==null?' ?':'')+'</small></div>').join(''));}
 async function buildPath(day,quiet){const recs=records.filter(r=>r.day===day&&r.photo&&r.mx!=null).sort((a,b)=>a.ts-b.ts);const ref=refFor(day);
   if(!ref){if(!quiet)toast('이 날의 기준 사진이 없어요 — 관측 탭 📌로 찍어요',3000);return null;}
   if(!recs.length){if(!quiet)toast('사진 속 달 위치를 표시한 기록이 없어요 (기록 카드의 📍)',3000);return null;}
