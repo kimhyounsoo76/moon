@@ -139,6 +139,18 @@ h3{font-size:16px;margin:16px 0 8px;color:var(--accent2)}
 .row.center{justify-content:center}
 .grow{flex:1;min-width:120px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.hsteps{display:grid;gap:12px;margin-top:12px}
+@media (min-width:760px){.hsteps{grid-template-columns:1fr 1fr}}
+.hstep{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.hstep .hh{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800}
+.hstep .hn{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#1a1400;display:flex;align-items:center;justify-content:center;font-size:15px}
+.hstep.done .hn{background:var(--ok)}
+.hstep .hs{font-size:14px;color:var(--muted);line-height:1.5}
+.hstep .hs b{color:var(--text,#fff)}
+.hstep .hb{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.hstep .hb .btn{min-height:44px}
+.hstep .opt{font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.more{display:none}.more.open{display:flex}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
 .cards{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:640px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -204,6 +216,7 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
 <div id="app">
   <header class="topbar"><div class="brand">🌙 달 관측 일지</div><div class="chipmini" id="topChip">📍 포항</div></header>
   <nav id="nav">
+    <button data-v="home"><span class="ic">🏠</span>홈</button>
     <button data-v="cam" class="on"><span class="ic">📷</span>관측</button>
     <button data-v="log"><span class="ic">📒</span>기록</button>
     <button data-v="sky"><span class="ic">🗺️</span>하늘지도</button>
@@ -212,6 +225,11 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
   </nav>
   <main>
     <!-- 관측 -->
+    <section id="view-home" class="view">
+      <h2 style="margin-bottom:4px">👩‍🏫 선생님 홈</h2>
+      <div class="note" id="homeWho" style="margin-top:0"></div>
+      <div class="hsteps" id="homeSteps"></div>
+    </section>
     <section id="view-cam" class="view on">
       <div class="stage" id="stage">
         <video id="video" autoplay playsinline muted></video>
@@ -274,9 +292,12 @@ details ol{padding-left:20px;margin:8px 0;color:var(--muted);font-size:14px;line
       <div class="toolbar">
         <button class="btn" id="btnPath">🌙 달의 길</button>
         <button class="btn" id="btnSheet">📄 기록지 만들기</button>
-        <button class="btn" id="btnStack">🌌 겹쳐 보기</button>
-        <button class="btn" id="btnCsv">📊 CSV</button>
-        <button class="btn" id="btnAddManual">➕ 직접 추가</button>
+        <button class="btn" id="btnMore">더 보기 ▾</button>
+      </div>
+      <div class="toolbar more" id="moreBar" style="margin-top:-6px">
+        <button class="btn sm" id="btnStack">🌌 겹쳐 보기</button>
+        <button class="btn sm" id="btnCsv">📊 CSV</button>
+        <button class="btn sm" id="btnAddManual">➕ 직접 추가</button>
       </div>
       <div id="refStrip"></div>
       <div id="logList" class="cards"></div>
@@ -532,16 +553,43 @@ const Pin=(()=>{const K='moonlog.pin',DEF_PIN='091217';
 function kidSettings(){const n=S.name?esc(S.name):'(없음)';
   openModal('⚙ 설정','<div class="note" style="margin-top:0;line-height:1.8">📍 관측 장소: <b>'+esc(S.place||'')+'</b><br>🙋 관측자: <b>'+n+'</b><br>🕐 관측할 시간: <b>'+(S.obsH||3)+'시간</b></div><div class="note">장소·이름 등은 선생님 모드에서 바꿀 수 있어요.</div>',
     [{label:'닫기',fn:closeModal},{label:'🔒 선생님 모드',cls:'primary',fn:()=>{closeModal();setTimeout(()=>Pin.ask(()=>{setKid(false);toast('👩‍🏫 선생님 모드');}),80);}}]);}
+/* ===== 선생님 홈: 오늘 할 일 순서대로 ===== */
+function schoolWindow(d){const d0=parseKey(dayKey(d));let a=null,b=null,best=-90,bestT=null;for(let m=9*60;m<=17*60;m+=10){const t=new Date(d0.getTime()+m*60000),p=Astro.moon(t,S.lat,S.lng);if(p.alt>best){best=p.alt;bestT=t;}if(p.alt>=10){if(!a)a=t;b=t;}}return{a,b,best,bestT};}
+function renderHome(){const now=new Date(),today=dayKey(now),w=schoolWindow(now),il=Astro.illum(now);
+  const todays=records.filter(r=>r.day===today),marked=todays.filter(r=>r.mx!=null).length,hasRef=!!(curRef&&curRef.day===today);
+  const calToday=S.calibAt&&dayKey(new Date(S.calibAt))===today,sen=!!Sensor.get()||Sensor.needPerm();
+  setHTML($('#homeWho'),'📍 <b>'+esc(S.place||'장소 없음')+'</b> · 🙋 '+(S.name?'<b>'+esc(S.name)+'</b>':'관측자 이름 없음')+' · '+moonEmoji(il.phase)+' 오늘 '+phaseName(il.phase)+' &nbsp;<a href="#" id="homeSet" style="text-decoration:underline;color:var(--accent);font-weight:700">바꾸기</a>');
+  const good=!!w.a;
+  const steps=[
+   {n:1,done:good,t:'📅 관측할 날 확인',s:good?'오늘 학교 시간에 달이 보여요: <b>'+fmtTime(w.a)+' ~ '+(w.b.getHours()>=17?'17시 넘어서까지':fmtTime(w.b))+'</b> (고도 10° 이상)':'오늘은 학교 시간(9~17시)에 달이 잘 안 보여요. <b>30일 표에서 초록 줄</b>인 날을 고르세요.',
+    b:[['📅 달력·시간표 보기','info']]},
+   {n:2,done:calToday,opt:'권장',t:'🧭 나침반 보정',s:calToday?'오늘 보정했어요 (방위 '+(S.azOff>=0?'+':'')+S.azOff+'°)':(sen?'달이 보일 때 한 번: 달을 십자선 가운데에 맞추고 <b>🧭 나침반 보정</b>을 눌러요.':'이 기기는 나침반이 없어요. 건너뛰어도 관측·달의 길은 돼요.'),
+    b:sen?[['🧭 보정하러 가기','calib']]:[]},
+   {n:3,done:hasRef,opt:'선택',t:'📌 기준 사진',s:hasRef?'오늘 기준 사진이 있어요 ('+fmtTime(new Date(curRef.ts))+')':'학생 모드 첫 단계에서 학생이 찍어도 돼요. 미리 찍어 두려면 건물과 달이 함께 보이게 맞추고 <b>✅ 좋은 구도</b>에서 찍어요.',
+    b:[[hasRef?'📌 다시 찍기':'📌 기준 사진 찍기','ref']]},
+   {n:4,done:false,t:'👧 학생에게 넘기기',s:'학생 모드를 켜고 태블릿을 건네요. 학생은 <b>기준 사진 → 달 찍기 → 달의 길</b> 세 단계만 봐요. 돌아올 때: ⚙ → 🔒 비밀번호',
+    b:[['👧 학생 모드 켜기','kid']]},
+   {n:5,done:marked>=2,t:'🌙 결과 보기',s:todays.length?'오늘 사진 <b>'+todays.length+'장</b> · 달 표시 <b>'+marked+'장</b>'+(marked<2?' (달의 길은 2장부터)':''):'아직 오늘 찍은 사진이 없어요.',
+    b:[['🌙 달의 길','path'],['📄 기록지 만들기','sheet'],['📒 기록 보기','log']]}];
+  setHTML($('#homeSteps'),steps.map(x=>'<div class="hstep'+(x.done?' done':'')+'"><div class="hh"><span class="hn">'+(x.done?'✓':x.n)+'</span>'+x.t+(x.opt?' <span class="opt">'+x.opt+'</span>':'')+'</div><div class="hs">'+x.s+'</div>'+(x.b.length?'<div class="hb">'+x.b.map((b,i)=>'<button class="btn'+(i===0?' primary':'')+'" data-go="'+b[1]+'">'+b[0]+'</button>').join('')+'</div>':'')+'</div>').join(''));
+  $('#homeSet').onclick=e=>{e.preventDefault();showView('set');};
+  $$('#homeSteps [data-go]').forEach(el=>el.onclick=()=>{const g=el.dataset.go;
+    if(g==='info'){infoDay=today;showView('info');}
+    else if(g==='calib'){showView('cam');toast('달을 십자선 가운데에 맞추고 🧭 나침반 보정을 눌러요',4000);}
+    else if(g==='ref'){showView('cam');startRefMode();}
+    else if(g==='kid'){setKid(true);toast('👧 학생 모드예요. 선생님 모드는 ⚙ → 🔒 선생님 모드',4000);}
+    else if(g==='path'||g==='sheet'){showView('log');setTimeout(()=>{const s=$('#logDaySel');if(s&&[...s.options].some(o=>o.value===today)){s.value=today;s.dispatchEvent(new Event('change'));}$(g==='path'?'#btnPath':'#btnSheet').click();},60);}
+    else showView(g);});}
 function setKid(on){S.kid=!!on;if(on)S.ghost=true;saveS();document.body.classList.toggle('kid',S.kid);
   if(!S.kid){refMode=false;$('#btnShot').classList.remove('ref');}
-  showView('cam');renderKid();}
+  showView(S.kid?'cam':'home');renderKid();}
 function renderKid(){if(!S.kid)return;const today=dayKey(new Date()),hasRef=!!(curRef&&curRef.day===today);
   if(!hasRef&&!refMode){refMode=true;$('#btnShot').classList.add('ref');}
   const todays=records.filter(r=>r.day===today).sort((a,b)=>a.ts-b.ts),n=todays.length,marked=todays.filter(r=>r.mx!=null).length;
   const step=(!hasRef||refMode)?1:(marked>=2?3:2);
   $$('#kidSteps span').forEach((s,i)=>{s.classList.toggle('on',i===step-1);s.classList.toggle('done',i<step-1);});
   let title,desc,main;
-  if(step===1){title='① 기준 사진 찍기';desc=hasRef?'건물과 달이 함께 보이게 맞추고, ✅가 뜨면 다시 찍어요.':'늘 설 자리에 서요. 학교 건물과 달이 함께 보이게 맞추고, ✅가 뜨면 찍어요.';main='📸 기준 사진 찍기';}
+  if(step===1){title='① 기준 사진 찍기';const sen=!!Sensor.get();desc=hasRef?(sen?'건물과 달이 함께 보이게 맞추고, ✅가 뜨면 다시 찍어요.':'건물과 달이 함께 보이게 맞추고 다시 찍어요.'):(sen?'늘 설 자리에 서요. 학교 건물과 달이 함께 보이게 맞추고, ✅가 뜨면 찍어요.':'늘 설 자리에 서요. 학교 건물과 달이 함께 보이게 맞추고 찍어요.');main='📸 기준 사진 찍기';}
   else{title=step===2?'② 달 사진 찍기':'③ 달의 길이 생겼어요!';desc='노란 선에 건물을 딱 맞추고 찍어요.'+(n?' 지금까지 '+n+'장.':'')+(Timer.isOn()?' ⏰ 다음 '+Timer.left():'');main='📸 달 찍기';}
   setHTML($('#kidTitle'),title);setHTML($('#kidDesc'),desc);setHTML($('#kidMain'),main);
   let sub='';if(Sensor.needPerm()&&!Sensor.isEnabled())sub+='<button class="btn sm primary" id="kidSensor">🧭 나침반 켜기</button>';
@@ -569,7 +617,7 @@ function closeModal(){$('#modal').classList.add('hidden');$('#mBody').innerHTML=
 let bannerT=null;function showBanner(text,ms){const b=$('#banner');b.querySelector('span').textContent=text;b.classList.remove('hidden');clearTimeout(bannerT);bannerT=setTimeout(()=>b.classList.add('hidden'),ms||90000);}
 function setHTML(el,html){if(el.__h!==html){el.innerHTML=html;el.__h=html;}}
 function updateTopChip(){const il=Astro.illum(new Date());$('#topChip').textContent='📍 '+S.place+' · '+moonEmoji(il.phase)+' '+phaseShort(il.phase);}
-function showView(v){curView=v;$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='view-'+v));
+function showView(v){if(v==='home')renderHome();curView=v;$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='view-'+v));
   if(v==='cam'){Cam.start();Sensor.autoEnable();startLoop();}else{stopLoop();if(!Timer.isAuto())Cam.stop();}
   if(v!=='sky'&&skyPlaying)skyTogglePlay();
   if(v==='log')renderLog();if(v==='sky')skyRender();if(v==='info')renderInfo();if(v==='set')renderSettings();
@@ -705,7 +753,7 @@ async function doCapture(auto){const now=Date.now();const c=Cam.capture();
   if(useRef)setTimeout(()=>afterShot(rec,c.width,c.height),450);
   else if(rec.az==null)setTimeout(()=>openRecModal(rec,false,'나침반이 없어서 방위·고도를 직접 적어 주세요'),500);}
 function calibrate(){const raw=Sensor.raw();if(!raw||Date.now()-raw.t>5000){toast('나침반 센서가 없거나 꺼져 있어요');return;}const now=new Date(),p=Astro.moon(now,S.lat,S.lng);if(p.alt<=0){toast('지금은 달이 지평선 아래라 보정할 수 없어요');return;}
-  S.azOff=+norm180(p.az-raw.az).toFixed(1);S.altOff=+(p.alt-raw.alt).toFixed(1);saveS();beep(1,1320);toast('🧭 달 위치 기준으로 나침반을 보정했어요');}
+  S.azOff=+norm180(p.az-raw.az).toFixed(1);S.altOff=+(p.alt-raw.alt).toFixed(1);S.calibAt=Date.now();saveS();beep(1,1320);toast('🧭 달 위치 기준으로 나침반을 보정했어요');}
 
 /* ===== 간격 알림·자동 촬영 ===== */
 const Timer=(()=>{let on=false,mode='alarm',interval=60,next=0,wl=null;
@@ -883,6 +931,7 @@ function applyLoc(){S.lat=clamp(+$('#setLat').value||0,-89.9,89.9);S.lng=clamp(+
 /* ===== 이벤트 연결·시작 ===== */
 function bind(){
   $$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.v));
+  $('#btnMore').onclick=()=>{const m=$('#moreBar'),o=!m.classList.contains('open');m.classList.toggle('open',o);$('#btnMore').textContent=o?'접기 ▴':'더 보기 ▾';};
   $('#btnShot').onclick=()=>{pendingPos=Sensor.get();doCapture(false);};
   $('#btnRetryCam').onclick=()=>{Cam.stop();Cam.start();};
   $('#btnFileCam').onclick=()=>{pendingPos=Sensor.get();$('#fileCam').click();};
@@ -948,7 +997,7 @@ async function init(){try{records=await DB.all();refs=await DB.allRefs();}catch(
   if(S.kidStart!==false&&!S.kid){S.kid=true;S.ghost=true;saveS();}
   bind();updateTopChip();Timer.render();renderSettings();document.body.classList.toggle('kid',!!S.kid);
   const r0=refs.find(x=>x.id===S.refId);if(r0)setRef(r0);
-  showView('cam');renderKid();setInterval(()=>{Timer.tick();if(S.kid)renderKid();},1000);setInterval(updateTopChip,600000);}
+  showView(S.kid?'cam':'home');renderKid();setInterval(()=>{Timer.tick();if(S.kid)renderKid();},1000);setInterval(updateTopChip,600000);}
 init();
 })();
 </script>
